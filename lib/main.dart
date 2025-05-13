@@ -2,9 +2,46 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+
+// Dodaj klasę ThemeProvider
+class ThemeProvider with ChangeNotifier {
+  ThemeMode _themeMode = ThemeMode.dark;
+  static const String _themeKey = 'theme_mode';
+
+  ThemeMode get themeMode => _themeMode;
+
+  ThemeProvider() {
+    _loadTheme();
+  }
+
+  Future<void> _loadTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedTheme = prefs.getString(_themeKey);
+    if (savedTheme != null) {
+      _themeMode = ThemeMode.values.firstWhere(
+        (mode) => mode.toString() == savedTheme,
+        orElse: () => ThemeMode.dark,
+      );
+      notifyListeners();
+    }
+  }
+
+  Future<void> toggleTheme() async {
+    _themeMode = _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_themeKey, _themeMode.toString());
+    notifyListeners();
+  }
+}
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -12,20 +49,244 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
     return MaterialApp(
       title: 'Roulette',
       theme: ThemeData(
         brightness: Brightness.light,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.teal,
+              brightness: Brightness.light,
+              primary: Colors.teal,
+              secondary: Colors.tealAccent,
+              surface: Colors.white,
+              background: Colors.grey[50]!,
+              onSurface: Colors.black87,
+              onBackground: Colors.black87,
+            ),
         useMaterial3: true,
+            cardTheme: CardTheme(
+              color: Colors.white,
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal,
+                foregroundColor: Colors.white,
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                  side: const BorderSide(color: Colors.black12, width: 1),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+                textStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.1,
+                ),
+              ),
+            ),
+            textTheme: const TextTheme(
+              bodyLarge: TextStyle(color: Colors.black87),
+              bodyMedium: TextStyle(color: Colors.black87),
+              titleLarge: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+            ),
+            iconTheme: const IconThemeData(
+              color: Colors.black87,
+              size: 32,
+            ),
       ),
       darkTheme: ThemeData(
         brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal, brightness: Brightness.dark),
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.teal,
+              brightness: Brightness.dark,
+              primary: Colors.teal,
+              secondary: Colors.tealAccent,
+              surface: const Color(0xFF151C25),
+              background: const Color(0xFF0B111A),
+              onSurface: Colors.white,
+              onBackground: Colors.white,
+            ),
         useMaterial3: true,
+            cardTheme: CardTheme(
+              color: const Color(0xFF151C25),
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF151C25),
+                foregroundColor: Colors.white,
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+                textStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.1,
+                ),
+              ),
+            ),
+            textTheme: const TextTheme(
+              bodyLarge: TextStyle(color: Colors.white),
+              bodyMedium: TextStyle(color: Colors.white),
+              titleLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            iconTheme: const IconThemeData(
+              color: Colors.white,
+              size: 32,
+            ),
+          ),
+          themeMode: themeProvider.themeMode,
+          home: const LoginScreen(),
+        );
+      },
+    );
+  }
+}
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  String _errorMessage = '';
+
+  void _login() {
+    if (_usernameController.text == 'admin' && _passwordController.text == '1234') {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const RouletteHomePage()),
+      );
+    } else {
+      setState(() {
+        _errorMessage = 'Nieprawidłowa nazwa użytkownika lub hasło';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = colorScheme.brightness == Brightness.dark;
+
+    return Scaffold(
+      backgroundColor: colorScheme.background,
+      body: Center(
+        child: Container(
+          width: 300,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.2 : 0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+            border: isDark ? null : Border.all(color: Colors.black12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      themeProvider.themeMode == ThemeMode.dark
+                          ? Icons.dark_mode
+                          : Icons.light_mode,
+                      color: colorScheme.onSurface,
+                    ),
+                    onPressed: () => themeProvider.toggleTheme(),
+                  ),
+                ],
+              ),
+              Text(
+                'Logowanie',
+                style: TextStyle(
+                  color: colorScheme.onSurface,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _usernameController,
+                style: TextStyle(color: colorScheme.onSurface),
+                decoration: InputDecoration(
+                  hintText: 'Nazwa użytkownika',
+                  hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.6)),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: colorScheme.onSurface.withOpacity(0.2)),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: colorScheme.primary),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _passwordController,
+                obscureText: true,
+                style: TextStyle(color: colorScheme.onSurface),
+                decoration: InputDecoration(
+                  hintText: 'Hasło',
+                  hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.6)),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: colorScheme.onSurface.withOpacity(0.2)),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: colorScheme.primary),
+                  ),
+                ),
+              ),
+              if (_errorMessage.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    _errorMessage,
+                    style: TextStyle(color: colorScheme.error),
+                  ),
+                ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    side: BorderSide(
+                      color: isDark ? Colors.transparent : Colors.black12,
+                      width: 1,
+                    ),
+                  ),
+                ),
+                onPressed: _login,
+                child: const Text('Zaloguj się'),
+              ),
+            ],
+          ),
+        ),
       ),
-      themeMode: ThemeMode.system,
-      home: const RouletteHomePage(),
     );
   }
 }
@@ -243,19 +504,12 @@ class _RouletteHomePageState extends State<RouletteHomePage> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
-    final isDark = true; // Wymuszamy ciemny motyw jak na zdjęciu
-    final bgColor = const Color(0xFF0B111A);
-    final cardColor = const Color(0xFF151C25);
-    final textColor = Colors.white;
-    final iconColor = Colors.white;
-    final borderColor = const Color(0xFF232A34);
-    final buttonBg = cardColor;
-    final buttonText = Colors.white;
-    final button2Bg = cardColor;
-    final button2Text = Colors.white.withOpacity(0.85);
+    final colorScheme = Theme.of(context).colorScheme;
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = colorScheme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: colorScheme.background,
       body: SafeArea(
         child: Center(
           child: Container(
@@ -263,7 +517,7 @@ class _RouletteHomePageState extends State<RouletteHomePage> with SingleTickerPr
             margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
             padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
             decoration: BoxDecoration(
-              color: bgColor,
+              color: colorScheme.background,
               borderRadius: BorderRadius.circular(32),
             ),
             child: Column(
@@ -281,13 +535,26 @@ class _RouletteHomePageState extends State<RouletteHomePage> with SingleTickerPr
                         style: TextStyle(
                           fontSize: 36,
                           fontWeight: FontWeight.bold,
-                          color: textColor,
+                          color: colorScheme.onBackground,
                         ),
                       ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              themeProvider.themeMode == ThemeMode.dark
+                                  ? Icons.dark_mode
+                                  : Icons.light_mode,
+                              color: colorScheme.onBackground,
+                            ),
+                            onPressed: () => themeProvider.toggleTheme(),
+                      ),
                       CircleAvatar(
-                        backgroundColor: cardColor,
+                            backgroundColor: colorScheme.surface,
                         radius: 22,
-                        child: Icon(Icons.person, color: iconColor, size: 26),
+                            child: Icon(Icons.person, color: colorScheme.onSurface, size: 26),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -303,6 +570,7 @@ class _RouletteHomePageState extends State<RouletteHomePage> with SingleTickerPr
                         icon: icons[i],
                         label: categories[i],
                         highlighted: selectedCategory == i,
+                        colorScheme: colorScheme,
                       ),
                     )),
                   ),
@@ -318,8 +586,15 @@ class _RouletteHomePageState extends State<RouletteHomePage> with SingleTickerPr
                         angle: _animation.value * angle,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: cardColor,
+                            color: colorScheme.surface,
                             shape: BoxShape.circle,
+                            boxShadow: isDark ? null : [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(10.0),
@@ -346,14 +621,21 @@ class _RouletteHomePageState extends State<RouletteHomePage> with SingleTickerPr
                     },
                   ),
                 ),
+                // Zwiększony odstęp i pole na wynik
+                SizedBox(height: 16),
                 if (!isSpinning && spinningResult != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Text(
-                      'Wylosowano: ${categories[selectedCategory]}',
-                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  Text(
+                    'Wylosowano: ${categories[selectedCategory]}',
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ),
+                    textAlign: TextAlign.center,
+                  )
+                else
+                  const SizedBox(height: 24),
+                SizedBox(height: 8),
                 // Buttons
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 0),
@@ -363,17 +645,34 @@ class _RouletteHomePageState extends State<RouletteHomePage> with SingleTickerPr
                         width: 240,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: buttonBg,
-                            foregroundColor: buttonText,
+                            backgroundColor: isDark ? colorScheme.surface : Colors.white,
+                            foregroundColor: isDark ? Colors.white : Colors.black87,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(28),
+                              side: BorderSide(
+                                color: isDark ? Colors.transparent : Colors.black26,
+                                width: 1,
+                              ),
                             ),
-                            textStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.2),
-                            elevation: 0,
+                            textStyle: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.2,
+                            ),
+                            elevation: isDark ? 0 : 2,
                           ),
                           onPressed: _spinRoulette,
-                          child: isSpinning ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)) : const Text('KRĘĆ'),
+                          child: isSpinning
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.teal,
+                                    strokeWidth: 3,
+                                  ),
+                                )
+                              : const Text('KRĘĆ'),
                         ),
                       ),
                       const SizedBox(height: 18),
@@ -381,14 +680,22 @@ class _RouletteHomePageState extends State<RouletteHomePage> with SingleTickerPr
                         width: 240,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: button2Bg,
-                            foregroundColor: button2Text,
+                            backgroundColor: isDark ? colorScheme.surface : Colors.white,
+                            foregroundColor: isDark ? Colors.white : Colors.black87,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(28),
+                              side: BorderSide(
+                                color: isDark ? Colors.transparent : Colors.black26,
+                                width: 1,
+                              ),
                             ),
-                            textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, letterSpacing: 1.1),
-                            elevation: 0,
+                            textStyle: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1.1,
+                            ),
+                            elevation: isDark ? 0 : 2,
                           ),
                           onPressed: _showAddActivityDialog,
                           child: const Text('DODAJ AKTYWNOŚĆ'),
@@ -398,17 +705,6 @@ class _RouletteHomePageState extends State<RouletteHomePage> with SingleTickerPr
                   ),
                 ),
                 const Spacer(),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 18.0, top: 8),
-                  child: Container(
-                    height: 4,
-                    width: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.white24,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -422,20 +718,39 @@ class _CategoryIcon extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool highlighted;
-  const _CategoryIcon({required this.icon, required this.label, this.highlighted = false});
+  final ColorScheme colorScheme;
+
+  const _CategoryIcon({
+    required this.icon,
+    required this.label,
+    required this.colorScheme,
+    this.highlighted = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = colorScheme.brightness == Brightness.dark;
+    final iconColor = isDark
+        ? Colors.white.withOpacity(highlighted ? 1 : 0.7)
+        : Colors.black.withOpacity(highlighted ? 1 : 0.8);
+    final textColor = isDark
+        ? Colors.white.withOpacity(highlighted ? 1 : 0.7)
+        : Colors.black.withOpacity(highlighted ? 1 : 0.8);
+
     return Column(
       children: [
-        Icon(icon, size: 32, color: Colors.white.withOpacity(highlighted ? 1 : 0.7)),
+        Icon(
+          icon,
+          size: 32,
+          color: iconColor,
+        ),
         const SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
             fontSize: 13,
-            color: Colors.white.withOpacity(highlighted ? 1 : 0.7),
-            fontWeight: highlighted ? FontWeight.bold : FontWeight.normal,
+            color: textColor,
+            fontWeight: highlighted ? FontWeight.bold : FontWeight.w500,
           ),
         ),
       ],
@@ -586,13 +901,22 @@ class _ChallengeScreenState extends State<ChallengeScreen> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.themeMode == ThemeMode.dark;
+    final bgColor = isDark ? const Color(0xFF2196F3) : Colors.blue[100];
+    final textColor = Colors.white;
+    final cardColor = isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.9);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF2196F3),
+      backgroundColor: bgColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Make My Day', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          'Make My Day',
+          style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 22),
+        ),
+        iconTheme: IconThemeData(color: textColor),
         automaticallyImplyLeading: true,
       ),
       body: Center(
@@ -631,14 +955,14 @@ class _ChallengeScreenState extends State<ChallengeScreen> with TickerProviderSt
               padding: const EdgeInsets.all(24),
               margin: const EdgeInsets.only(bottom: 18),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.08),
+                color: cardColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withOpacity(0.5)),
+                border: Border.all(color: textColor.withOpacity(0.5)),
               ),
               child: Text(
                 drawnChallenge ?? 'Naciśnij przycisk, aby wylosować wyzwanie',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             ElevatedButton(
