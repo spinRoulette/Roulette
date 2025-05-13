@@ -322,6 +322,95 @@ class _RouletteHomePageState extends State<RouletteHomePage> with SingleTickerPr
   late Animation<double> _animation;
   bool isSpinning = false;
 
+  // Dodana baza wyzwań
+  final Map<String, List<String>> wyzwania = {
+    'Dzień': [
+      'Wstań godzinę wcześniej niż zwykle.',
+      'Przejdź dziś minimum 10 000 kroków.',
+      'Zrezygnuj na jeden dzień z telefonu po godzinie 20:00.',
+      'Zrób coś dobrego dla nieznajomej osoby.',
+      'Przeznacz 30 minut na porządki w dowolnym miejscu w domu.',
+      'Spędź 10 minut medytując lub wykonując ćwiczenia oddechowe.',
+      'Zrób listę swoich 5 największych celów na ten rok.',
+      'Znajdź 10 minut na czytanie książki lub artykułów.',
+      'Przypomnij sobie 3 rzeczy, za które jesteś wdzięczny/a.',
+      'Zrób przerwę na 10 minut w pracy i wyjdź na świeże powietrze.',
+      'Zaplanuj swój tydzień, zapisując kluczowe zadania.',
+      'Zrób coś, co sprawia Ci radość, ale zazwyczaj odkładasz na później.',
+      'Napisz listę rzeczy, które chcesz osiągnąć w ciągu najbliższego miesiąca.',
+      'Odetnij się na 30 minut od technologii (bez telefonu, komputera).',
+      'Spędź 15 minut na porozmawianiu z kimś, kogo długo nie widziałeś/aś.',
+    ],
+    'Jedzenie': [
+      'Ugotuj coś nowego z przepisu z internetu.',
+      'Zrób cały dzień bez słodyczy.',
+      'Zjedz dziś 5 porcji warzyw.',
+      'Przygotuj zdrowe śniadanie z owsianką lub smoothie.',
+      'Zrób domową pizzę od podstaw.',
+      'Przygotuj sałatkę z 5 różnych składników.',
+      'Zjedz dzisiaj pełnowartościowy posiłek na każdą z trzech głównych pór dnia.',
+      'Wprowadź do diety owoc, którego jeszcze nie jadłeś/aś.',
+      'Odwiedź lokalny targ i kup świeże produkty sezonowe.',
+      'Zjedz bez pośpiechu, koncentrując się na smaku jedzenia.',
+      'Zrób zdrowy deser bez cukru (np. jogurt z owocami).',
+      'Spróbuj gotować w kuchni z innej części świata (np. kuchnia japońska).',
+      'Przygotuj szybkie danie w mniej niż 30 minut.',
+      'Zrób dzień bez mięsa i spróbuj dań roślinnych.',
+      'Zjedz każdy posiłek powoli, starając się docenić smaki i tekstury.',
+    ],
+    'Rozrywka': [
+      'Zagraj w grę planszową lub karcianą.',
+      'Obejrzyj film z listy klasyków, których jeszcze nie widziałeś/aś.',
+      'Spędź godzinę grając w swoją ulubioną grę — bez poczucia winy.',
+      'Znajdź nową grę mobilną i przetestuj ją przez 15 minut.',
+      'Przejrzyj stare zdjęcia lub filmy i powspominaj dobre chwile.',
+      'Zorganizuj wieczór filmowy z przyjaciółmi lub rodziną.',
+      'Spróbuj swoich sił w grze, którą zawsze chciałeś/aś wypróbować.',
+      'Stwórz listę ulubionych filmów i obejrzyj jeden z nich.',
+      'Odwiedź lokalne muzeum lub galerię sztuki.',
+      'Zorganizuj maraton swojej ulubionej serii filmowej.',
+      'Przeczytaj książkę, która została Ci polecona przez znajomych.',
+      'Poświęć godzinę na naukę nowej gry online lub planszowej.',
+      'Zrób sobie przerwę i spędź czas na rozwiązywaniu łamigłówek lub krzyżówek.',
+      'Przypomnij sobie swoje ulubione gry z dzieciństwa i zagraj w nie ponownie.',
+      'Zorganizuj spontaniczny wieczór karaoke.',
+    ],
+    'Muzyka': [
+      'Posłuchaj przez 30 minut muzyki z innego gatunku niż zwykle.',
+      'Stwórz nową playlistę na konkretny nastrój (np. relaks, motywacja).',
+      'Naucz się słów jednej nowej piosenki i zaśpiewaj ją.',
+      'Odsłuchaj cały album wybranego artysty bez przerzucania utworów.',
+      'Znajdź nowego artystę na Spotify/YouTube i posłuchaj 3 jego utworów.',
+      'Posłuchaj muzyki z lat 80-90 i przypomnij sobie stare hity.',
+      'Zorganizuj wieczór muzyczny z przyjaciółmi, wymieniając się ulubionymi utworami.',
+      'Zrób playlistę na długi spacer lub bieganie.',
+      'Spędź godzinę grając na instrumencie, nawet jeśli dopiero zaczynasz.',
+      'Posłuchaj muzyki instrumentalnej, idealnej do koncentracji.',
+      'Odsłuchaj płytę, której nigdy wcześniej nie doceniłeś/aś.',
+      'Zrób research na temat swojego ulubionego gatunku muzycznego.',
+      'Zaśpiewaj karaoke do ulubionej piosenki.',
+      'Odsłuchaj koncert na żywo swojego ulubionego artysty online.',
+      'Spędź 30 minut na poznawaniu historii muzyki z danego okresu lub gatunku.',
+    ],
+    'Podróż': [
+      'Wybierz się dziś na spacer po nieznanej okolicy w Twoim mieście.',
+      'Zaplanuj weekendową wycieczkę (nawet jeśli tylko na mapie).',
+      'Przejdź się trasą, którą jeszcze nigdy nie chodziłeś/aś.',
+      'Odwiedź lokalne miejsce, którego wcześniej nie znałeś/aś.',
+      'Zrób zdjęcie jak z wakacji — nawet jeśli jesteś niedaleko domu.',
+      'Odwiedź park lub ogród botaniczny w Twoim mieście.',
+      'Zorganizuj jednodniową wycieczkę do pobliskiej miejscowości.',
+      'Zaplanuj podróż do miejsca, które zawsze chciałeś/aś odwiedzić.',
+      'Przejdź się do miejsca, gdzie nigdy wcześniej nie byłeś/aś.',
+      'Zrób zdjęcia najpiękniejszych miejsc w swojej okolicy.',
+      'Przypomnij sobie swoje najpiękniejsze wakacje i zaplanuj przyszłą podróż.',
+      'Wybierz się na rowerową wycieczkę do najbliższego parku.',
+      'Spędź dzień w innym mieście i spróbuj odkryć jego uroki.',
+      'Odwiedź miejsce związane z historią Twojego regionu.',
+      'Zrób spontaniczną wycieczkę na łono natury, np. do lasu.',
+    ],
+  };
+
   @override
   void initState() {
     super.initState();
@@ -458,39 +547,11 @@ class _RouletteHomePageState extends State<RouletteHomePage> with SingleTickerPr
   }
 
   void _openChallengeScreen(int catIndex) {
-    // Przykładowa baza wyzwań dla każdej kategorii
-    final Map<String, List<String>> challengeBase = {
-      'Dzień': [
-        'Zrób 10 przysiadów!',
-        'Wyjdź na 5-minutowy spacer.',
-        'Napisz komuś miłą wiadomość.',
-      ],
-      'Jedzenie': [
-        'Spróbuj nowego przepisu.',
-        'Zjedz owoc, którego dawno nie jadłeś.',
-        'Przygotuj zdrową przekąskę.',
-      ],
-      'Rozrywka': [
-        'Zagraj w ulubioną grę przez 10 minut.',
-        'Obejrzyj zabawny filmik.',
-        'Narysuj coś śmiesznego.',
-      ],
-      'Muzyka': [
-        'Posłuchaj nowej piosenki.',
-        'Zaśpiewaj swoją ulubioną piosenkę.',
-        'Stwórz krótką playlistę.',
-      ],
-      'Podróż': [
-        'Zaplanuj wycieczkę na weekend.',
-        'Otwórz mapę i wybierz losowe miejsce do odwiedzenia.',
-        'Zrób zdjęcie ciekawego miejsca w okolicy.',
-      ],
-    };
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ChallengeScreen(
           category: categories[catIndex],
-          challenges: challengeBase[categories[catIndex]] ?? [],
+          challenges: wyzwania[categories[catIndex]] ?? [],
         ),
       ),
     );
