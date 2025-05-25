@@ -308,12 +308,12 @@ class _RouletteHomePageState extends State<RouletteHomePage> with SingleTickerPr
     Icons.place,
   ];
   final List<Color> pieColors = [
-    Color(0xFF7AD1D6),
-    Color(0xFF2B4263),
-    Color(0xFFB6E2D3),
-    Color(0xFFF7D6B3),
-    Color(0xFF7AD1D6),
-  ];
+    Color(0xFF7AD1D6),  // Light blue
+    Color(0xFF2B4263),  // Dark blue
+    Color(0xFFB6E2D3),  // Light green
+    Color(0xFFF7D6B3),  // Light orange
+    Color(0xFF7AD1D6),  // Light blue
+];
   Map<String, List<String>> activities = {};
   int selectedCategory = 0;
   int? spinningResult;
@@ -327,7 +327,6 @@ class _RouletteHomePageState extends State<RouletteHomePage> with SingleTickerPr
     'Dzień': [
       'Wstań godzinę wcześniej niż zwykle.',
       'Przejdź dziś minimum 10 000 kroków.',
-      'Zrezygnuj na jeden dzień z telefonu po godzinie 20:00.',
       'Zrób coś dobrego dla nieznajomej osoby.',
       'Przeznacz 30 minut na porządki w dowolnym miejscu w domu.',
       'Spędź 10 minut medytując lub wykonując ćwiczenia oddechowe.',
@@ -552,6 +551,7 @@ class _RouletteHomePageState extends State<RouletteHomePage> with SingleTickerPr
         builder: (_) => ChallengeScreen(
           category: categories[catIndex],
           challenges: wyzwania[categories[catIndex]] ?? [],
+          pieColors: pieColors,
         ),
       ),
     );
@@ -668,7 +668,7 @@ class _RouletteHomePageState extends State<RouletteHomePage> with SingleTickerPr
                                   centerSpaceRadius: 38,
                                   borderData: FlBorderData(show: false),
                                   sections: List.generate(categories.length, (i) => PieChartSectionData(
-                                    color: pieColors[i],
+                                    color: pieColors[i % pieColors.length],
                                     value: 25,
                                     showTitle: false,
                                     radius: 80,
@@ -819,102 +819,11 @@ class _CategoryIcon extends StatelessWidget {
   }
 }
 
-class _RouletteWheelPainter extends CustomPainter {
-  final int segments;
-  final double angle;
-  final List<Color> colors;
-  _RouletteWheelPainter({required this.segments, required this.angle, required this.colors});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-    final borderPaint = Paint()
-      ..color = const Color(0xFF23232E)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = size.width * 0.08;
-    final fillPaint = Paint()..style = PaintingStyle.fill;
-    final segmentAngle = 2 * pi / segments;
-    // Draw segments
-    for (int i = 0; i < segments; i++) {
-      fillPaint.color = colors[i % colors.length];
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius * 0.92),
-        i * segmentAngle,
-        segmentAngle,
-        true,
-        fillPaint,
-      );
-    }
-    // Draw border
-    canvas.drawCircle(center, radius * 0.92, borderPaint);
-    // Draw inner circle
-    final innerPaint = Paint()
-      ..color = const Color(0xFF23232E)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, radius * 0.38, innerPaint);
-    // Draw center yellow
-    final centerPaint = Paint()
-      ..color = const Color(0xFFF5C94A)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, radius * 0.28, centerPaint);
-    // Draw pointer
-    final pointerPaint = Paint()
-      ..color = const Color(0xFFF5C94A)
-      ..style = PaintingStyle.fill;
-    final pointerLength = radius * 0.92 - radius * 0.28;
-    final pointerWidth = radius * 0.13;
-    final pointerAngle = -pi / 2 + angle; // always up
-    final pointerPath = Path();
-    pointerPath.moveTo(center.dx, center.dy);
-    pointerPath.lineTo(
-      center.dx + cos(pointerAngle) * (radius * 0.28),
-      center.dy + sin(pointerAngle) * (radius * 0.28),
-    );
-    pointerPath.lineTo(
-      center.dx + cos(pointerAngle) * (radius * 0.28 + pointerLength),
-      center.dy + sin(pointerAngle) * (radius * 0.28 + pointerLength),
-    );
-    pointerPath.arcTo(
-      Rect.fromCircle(
-        center: Offset(
-          center.dx + cos(pointerAngle) * (radius * 0.28 + pointerLength),
-          center.dy + sin(pointerAngle) * (radius * 0.28 + pointerLength),
-        ),
-        radius: pointerWidth,
-      ),
-      pointerAngle - pi / 2,
-      pi,
-      false,
-    );
-    pointerPath.close();
-    canvas.drawPath(pointerPath, pointerPaint);
-    // Draw segment lines
-    final linePaint = Paint()
-      ..color = const Color(0xFF23232E)
-      ..strokeWidth = size.width * 0.045;
-    for (int i = 0; i < segments; i++) {
-      final angle = i * segmentAngle;
-      final p1 = Offset(
-        center.dx + cos(angle) * (radius * 0.92),
-        center.dy + sin(angle) * (radius * 0.92),
-      );
-      final p2 = Offset(
-        center.dx + cos(angle) * (radius * 0.38),
-        center.dy + sin(angle) * (radius * 0.38),
-      );
-      canvas.drawLine(p1, p2, linePaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-}
-
 class ChallengeScreen extends StatefulWidget {
   final String category;
   final List<String> challenges;
-  const ChallengeScreen({super.key, required this.category, required this.challenges});
+  final List<Color> pieColors;
+  const ChallengeScreen({super.key, required this.category, required this.challenges, required this.pieColors});
 
   @override
   State<ChallengeScreen> createState() => _ChallengeScreenState();
@@ -924,21 +833,28 @@ class _ChallengeScreenState extends State<ChallengeScreen> with TickerProviderSt
   String? drawnChallenge;
   bool spinning = false;
   late final AnimationController _spinController;
-  late final Animation<double> _spinAnimation;
+  late Animation<double> _spinAnimation;
 
   @override
   void initState() {
     super.initState();
     _spinController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(seconds: 2),
     );
-    _spinAnimation = Tween<double>(begin: 0, end: 2 * pi).animate(CurvedAnimation(parent: _spinController, curve: Curves.easeOut));
-    _spinController.addStatusListener((status) {
+    _spinAnimation = Tween<double>(begin: 0, end: 0).animate(CurvedAnimation(parent: _spinController, curve: Curves.easeOut));
+
+    _spinAnimation.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         setState(() {
           spinning = false;
-          drawnChallenge = (widget.challenges.toList()..shuffle()).first;
+          final double finalAngle = _spinAnimation.value;
+          final adjustedAngle = finalAngle + pi / 2;
+          final normalizedAngle = adjustedAngle % (2 * pi);
+          final positiveNormalizedAngle = normalizedAngle < 0 ? normalizedAngle + 2 * pi : normalizedAngle;
+          final segmentAngle = 2 * pi / widget.challenges.length;
+          final int drawnIndex = (positiveNormalizedAngle / segmentAngle).floor();
+          drawnChallenge = widget.challenges[drawnIndex % widget.challenges.length];
         });
       }
     });
@@ -950,6 +866,15 @@ class _ChallengeScreenState extends State<ChallengeScreen> with TickerProviderSt
       spinning = true;
       drawnChallenge = null;
     });
+    final int randomIndex = Random().nextInt(widget.challenges.length);
+    final double segmentAngle = 2 * pi / widget.challenges.length;
+    final double targetSegmentCenterAngle = randomIndex * segmentAngle + segmentAngle / 2;
+    final double requiredRotation = targetSegmentCenterAngle - (-pi/2);
+    final double fullSpins = 4;
+    final double targetAngle = fullSpins * 2 * pi + requiredRotation;
+
+    _spinAnimation = Tween<double>(begin: 0, end: targetAngle).animate(CurvedAnimation(parent: _spinController, curve: Curves.easeOut));
+
     _spinController.reset();
     _spinController.forward();
   }
@@ -964,20 +889,18 @@ class _ChallengeScreenState extends State<ChallengeScreen> with TickerProviderSt
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.themeMode == ThemeMode.dark;
-    final bgColor = isDark ? const Color(0xFF2196F3) : Colors.blue[100];
-    final textColor = Colors.white;
-    final cardColor = isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.9);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: colorScheme.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
           'Make My Day',
-          style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 22),
+          style: TextStyle(color: colorScheme.onBackground, fontWeight: FontWeight.bold, fontSize: 22),
         ),
-        iconTheme: IconThemeData(color: textColor),
+        iconTheme: IconThemeData(color: colorScheme.onBackground),
         automaticallyImplyLeading: true,
       ),
       body: Center(
@@ -993,21 +916,38 @@ class _ChallengeScreenState extends State<ChallengeScreen> with TickerProviderSt
                 );
               },
               child: Container(
-                width: 100,
-                height: 100,
+                width: 180,
+                height: 180,
                 margin: const EdgeInsets.only(bottom: 32),
-                child: CustomPaint(
-                  painter: _RouletteWheelPainter(
-                    segments: 6,
-                    angle: 0,
-                    colors: [
-                      const Color(0xFFF5C94A), // żółty
-                      const Color(0xFF4AC9A7), // zielony
-                      const Color(0xFFE94B4B), // czerwony
-                      const Color(0xFF4AC9A7),
-                      const Color(0xFFE94B4B),
-                      const Color(0xFF4AC9A7),
-                    ],
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  shape: BoxShape.circle,
+                  boxShadow: isDark ? null : [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: SizedBox(
+                    height: 180,
+                    width: 180,
+                    child: PieChart(
+                      PieChartData(
+                        sectionsSpace: 0,
+                        centerSpaceRadius: 38,
+                        borderData: FlBorderData(show: false),
+                        sections: List.generate(widget.challenges.length, (i) => PieChartSectionData(
+                          color: widget.pieColors[i % widget.pieColors.length],
+                          value: 1,
+                          showTitle: false,
+                          radius: 80,
+                        )),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -1016,20 +956,20 @@ class _ChallengeScreenState extends State<ChallengeScreen> with TickerProviderSt
               padding: const EdgeInsets.all(24),
               margin: const EdgeInsets.only(bottom: 18),
               decoration: BoxDecoration(
-                color: cardColor,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: textColor.withOpacity(0.5)),
+                border: isDark ? null : Border.all(color: Colors.black12),
               ),
               child: Text(
                 drawnChallenge ?? 'Naciśnij przycisk, aby wylosować wyzwanie',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(color: colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF2196F3),
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                 textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
